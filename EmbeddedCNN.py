@@ -1,17 +1,67 @@
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton
-from acnn_packages.ACNN import Ui_MainWindow as acnn
-from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QPainter, QPen
-from torch.autograd import Variable
-from PIL import Image
-from torch import nn
+import sys, os, platform
 
-import torch
-import torchvision
-import sys
-import PIL
-import numpy as np
-import matplotlib.pyplot as plt
+try:
+    import PyQt5
+    import numpy as np
+    import torch
+    import torchvision
+
+    from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QPushButton
+    from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
+    from PyQt5.QtGui import QPainter, QPen
+    from torch.autograd import Variable
+    from PIL import Image
+    from torch import nn
+
+    from acnn_packages.ACNN import Ui_MainWindow as acnn
+
+except ImportError:
+    _get_python_version = sys.version_info
+    _get_platform = platform.system()
+    _python_version = _get_python_version[1]
+    _dependencies = ['PyQt5',
+                     'Pillow',
+                     'numpy',
+                     'matplotlib']
+
+    assert _get_python_version >= (3, 5)
+
+    _with_cuda = {'linux': {'8': 'https://download.pytorch.org/whl/cu80/torch-1.0.0-cp3{0]-cp3{0}m-linux_x86_64.whl',
+                            '9': 'torch',
+                            '10': 'https://download.pytorch.org/whl/cu100/torch-1.0.0-cp3{0}-cp3{0}m-linux_x86_64.whl'},
+                  'windows': {'8': 'https://download.pytorch.org/whl/cu80/torch-1.0.0-cp3{0}-cp3{0}m-win_amd64.whl',
+                              '9': 'https://download.pytorch.org/whl/cu90/torch-1.0.0-cp3{0}-cp3{0}m-win_amd64.whl',
+                              '10': 'https://download.pytorch.org/whl/cu100/torch-1.0.0-cp3{0}-cp3{0}m-win_amd64.whl'}}
+
+    _without_cuda = {'linux': 'https://download.pytorch.org/whl/cpu/torch-1.0.0-cp3{0}-cp3{0}m-linux_x86_64.whl',
+                     'windows': 'https://download.pytorch.org/whl/cpu/torch-1.0.0-cp3{0}-cp3{0}m-win_amd64.whl'}
+
+    def _installing_pytorch(os: str, cuda_version: str, installing_gpu: bool):
+        print('---> Here')
+        if (os.lower() != 'mac'):
+            if (installing_gpu == 1):
+                _dependencies.append(_with_cuda[os.lower()][cuda_version].format(_python_version))
+
+            elif (installing_gpu == 0):
+                _dependencies.append(_without_cuda[os.lower()].format(_python_version))
+
+        elif (os.lower() == 'mac'):
+            _dependencies.append('torch')
+
+
+    _installing_gpu = int(input('Installing GPU or CPU version? (1 / 0): '))
+
+    if (_installing_gpu == 1):
+        _get_cuda_version = input('Choose Your Cuda Version (8 / 9 / 10): ')
+
+    elif (_installing_gpu == 0):
+        print('Installing Pytorch (CPU Version)')
+
+    for dependent in _dependencies:
+        os.system('pip3 install {0}'.format(dependent))
+    os.system('pip3 install torchvision')
+
+    sys.exit(1)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -78,7 +128,7 @@ class _ACNN(QMainWindow, acnn):
         model.eval()
 
         with torch.no_grad():
-            _im = PIL.Image.fromarray(self.canvas.drawn_point.T)
+            _im = Image.fromarray(self.canvas.drawn_point.T)
             _im = self.preprocessing(_im)
 
             _im = np.reshape(_im, (1, 1, 28, 28))
@@ -88,7 +138,6 @@ class _ACNN(QMainWindow, acnn):
 
             _image = Variable(_im).to(device)
             result = model(_image)
-            # print(result)
             _, predicted = torch.max(result.data, 1)
             print(predicted)
 
