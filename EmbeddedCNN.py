@@ -5,6 +5,7 @@ from PyQt5.QtGui import QPainter, QPen
 from torch.autograd import Variable
 from PIL import Image
 from torch import nn
+
 import torch
 import torchvision
 import sys
@@ -73,14 +74,11 @@ class _ACNN(QMainWindow, acnn):
 
     def predict(self):
         model = CNN().to(device)
-        # model.load_state_dict(torch.load('D:\\Python Projects\\Project Alpha\\PyTorch\\model1.pkl'))
         model.load_state_dict(torch.load('model.ckpt'))
         model.eval()
 
         with torch.no_grad():
             _im = PIL.Image.fromarray(self.canvas.drawn_point.T)
-            plt.imshow(_im)
-            plt.show()
             _im = self.preprocessing(_im)
 
             _im = np.reshape(_im, (1, 1, 28, 28))
