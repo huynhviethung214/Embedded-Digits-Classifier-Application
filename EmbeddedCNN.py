@@ -63,7 +63,7 @@ except ImportError:
 
     sys.exit(1)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class CNN(nn.Module):
     def __init__(self, num_classes=10):
@@ -124,7 +124,7 @@ class _ACNN(QMainWindow, acnn):
 
     def predict(self):
         model = CNN().to(device)
-        model.load_state_dict(torch.load('model.ckpt'))
+        model.load_state_dict(torch.load('model_v1.prmt'))
         model.eval()
 
         with torch.no_grad():
